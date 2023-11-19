@@ -19,11 +19,7 @@ jobs:
           SERVICE_PRINCIPAL_SECRET: ${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}
           SERVICE_PRINCIPAL_TENANT: ${{ secrets.AZURE_TENANT_ID }}
         run: |
-          az login \
-                --service-principal \
-                --username $(SERVICE_PRINCIPAL_APP_ID) \
-                --password $(SERVICE_PRINCIPAL_SECRET) \
-                --tenant $(SERVICE_PRINCIPAL_TENANT)
+          az login --service-principal -u ${{ SERVICE_PRINCIPAL_APP_ID }} -p ${{ SERVICE_PRINCIPAL_SECRET }} --tenant ${{ SERVICE_PRINCIPAL_TENANT }}
 
           az acr login --name samplerepotest
 
