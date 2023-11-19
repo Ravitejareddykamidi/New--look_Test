@@ -26,13 +26,19 @@ jobs:
       #     docker build -t newlookapi.azurecr.io/NewlookApi:${GITHUB_RUN_NUMBER} .
       #     docker login myacr.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
       #     docker push myacr.azurecr.io/myapp:${GITHUB_RUN_NUMBER}
-      - name: Install Azure CLI
+      # - name: Install Azure CLI
+      #   run: |
+      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+      - name: Print Secret Values
         run: |
-          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          echo "AZURE_SERVICE_PRINCIPAL_ID: ${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}"
+          echo "AZURE_SERVICE_PRINCIPAL_SECRET: ${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}"
+          echo "SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}"
+          echo "AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}"
 
-      - uses: Azure/login@v1
-        with:
-          creds: '{"clientId":"${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}","clientSecret":"${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+      # - uses: Azure/login@v1
+      #   with:
+      #     creds: '{"clientId":"${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}","clientSecret":"${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
         
       # - name: Run kubectl command
       #   run: kubectl get pods
