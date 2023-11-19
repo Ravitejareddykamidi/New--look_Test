@@ -1,0 +1,34 @@
+name: API Deployment on AKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+
+      - name: Log into Azure
+        run: az login --service-principal -u ${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }} -p ${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+
+      # - name: Configure kubectl
+      #   run: az aks get-credentials --resource-group "NewLook-Test" --name "Newlook-aks"
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t newlookapi.azurecr.io/NewlookApi:${GITHUB_RUN_NUMBER} .
+          docker login myacr.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+          docker push myacr.azurecr.io/myapp:${GITHUB_RUN_NUMBER}
+
+      # - name: Run kubectl command
+      #   run: kubectl get pods
