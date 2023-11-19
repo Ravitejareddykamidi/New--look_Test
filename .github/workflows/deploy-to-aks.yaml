@@ -21,9 +21,9 @@ jobs:
         run: |
           az login \
                 --service-principal \
-                --username $(AZURE_SERVICE_PRINCIPAL_ID) \
-                --password $(AZURE_SERVICE_PRINCIPAL_SECRET) \
-                --tenant $(AZURE_TENANT_ID)
+                --username $(SERVICE_PRINCIPAL_APP_ID) \
+                --password $(SERVICE_PRINCIPAL_SECRET) \
+                --tenant $(SERVICE_PRINCIPAL_TENANT)
 
           az acr login --name samplerepotest
 
