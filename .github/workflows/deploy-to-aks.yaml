@@ -10,8 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v2
+    
+      - name: Login to container registry
+        env:
+          SERVICE_PRINCIPAL_APP_ID: ${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}
+          SERVICE_PRINCIPAL_SECRET: ${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}
+          SERVICE_PRINCIPAL_TENANT: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          az login \
+                --service-principal \
+                --username $(AZURE_SERVICE_PRINCIPAL_ID) \
+                --password $(AZURE_SERVICE_PRINCIPAL_SECRET) \
+                --tenant $(AZURE_TENANT_ID)
+
+          az acr login --name samplerepotest
+
+      - name: Build image
+        run: |
+          docker build -t samplerepotest.azurecr.io/samplerepotest:${GITHUB_RUN_NUMBER} .
+          docker push samplerepotest.azurecr.io/samplerepotest:${GITHUB_RUN_NUMBER}
+
+      # - name: Push image
+      #   env:
+      #     ACR_NAME: ${{ secrets.ACR_NAME }}
+      #   run: make push
+      # - name: Checkout code
+      #   uses: actions/checkout@v2
 
       # - name: Configure kubectl
       #   run: az aks get-credentials --resource-group "NewLook-Test" --name "Newlook-aks"
@@ -28,13 +54,7 @@ jobs:
       #     docker push myacr.azurecr.io/myapp:${GITHUB_RUN_NUMBER}
       # - name: Install Azure CLI
       #   run: |
-      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      - name: Print Secret Values
-        run: |
-          echo "AZURE_SERVICE_PRINCIPAL_ID: ${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}"
-          echo "AZURE_SERVICE_PRINCIPAL_SECRET: ${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}"
-          echo "SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}"
-          echo "AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}"
+      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash  samplerepotest.azurecr.io
 
       # - uses: Azure/login@v1
       #   with:
