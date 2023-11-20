@@ -52,4 +52,4 @@ def delete_user(user_id):
         return jsonify({"message": "User not found"}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

@@ -23,7 +23,8 @@ resource "azurerm_container_registry" "test" {
   name                = "NewlookApi"
   resource_group_name = azurerm_resource_group.test.name
   location            = azurerm_resource_group.test.location
-  sku                 = "Premium"
+  sku                 = "Standard"
+  admin_enabled       = true
 }
 
 resource "azurerm_kubernetes_cluster" "test" {
@@ -63,4 +64,18 @@ output "kube_config" {
   value = azurerm_kubernetes_cluster.test.kube_config_raw
 
   sensitive = true
+}
+
+output "admin_username" {
+  value       = azurerm_container_registry.test.admin_username
+  description = "The Username associated with the Container Registry Admin account"
+  sensitive   = true
+}
+
+
+
+output "admin_password" {
+  value       = azurerm_container_registry.test.admin_password
+  description = "The Password associated with the Container Registry Admin account "
+  sensitive   = true
 }

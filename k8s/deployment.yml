@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newlook-aks-api
+spec:
+  selector:
+    matchLabels:
+      app: newlook-aks-api
+  template:
+    metadata:
+      labels:
+        app: newlook-aks-api
+    spec:
+      containers:
+      - name: newlook-aks-api
+        image: newlookapi.azurecr.io/newlook:80c75445d2f053e0dc24a11814a8dc42bc35748e
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5000

@@ -4,57 +4,59 @@ on:
   push:
     branches:
       - main
-
+env:
+  REGISTRY_NAME: newlookapi
+  CLUSTER_NAME: Newlook-aks
+  CLUSTER_RESOURCE_GROUP: NewLook-Test
+  NAMESPACE: default
+  
 jobs:
-  Build:
+  build:
     runs-on: ubuntu-latest
-
+    environment: production
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
+    - uses: actions/checkout@main
     
-      - name: Login to container registry
-        env:
-          SERVICE_PRINCIPAL_APP_ID: ${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}
-          SERVICE_PRINCIPAL_SECRET: ${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}
-          SERVICE_PRINCIPAL_TENANT: ${{ secrets.AZURE_TENANT_ID }}
-        run: |
-          az login --service-principal -u ${SERVICE_PRINCIPAL_APP_ID} -p ${SERVICE_PRINCIPAL_SECRET} --tenant ${SERVICE_PRINCIPAL_TENANT}
+    # Connect to Azure Container registry (ACR)
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+        username: ${{ secrets.DOCKERUSER }} 
+        password: ${{ secrets.DOCKERPASSWORD }}
+    
+    # Container build and push to a Azure Container registry (ACR)
+    - run: |
+        docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/newlook:${{ github.sha }}
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/newlook:${{ github.sha }}
 
-          az acr login --name samplerepotest
+    
+    # Set the target Azure Kubernetes Service (AKS) cluster. 
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: '${{ secrets.AZURE_CREDENTIALS }}'
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+    
+    # Create namespace if doesn't exist
+    - run: |
+        kubectl create namespace ${{ env.NAMESPACE }} --dry-run -o json | kubectl apply -f -
+    
+    # Create imagepullsecret for Azure Container registry (ACR)
+    - uses: azure/k8s-create-secret@v1
+      with:
+        container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
+        container-registry-username: ${{ secrets.DOCKERUSER }}
+        container-registry-password: ${{ secrets.DOCKERPASSWORD }}
+        secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
+        namespace: ${{ env.NAMESPACE }}
 
-      - name: Build image
-        run: |
-          docker build -t samplerepotest.azurecr.io/samplerepotest:${GITHUB_RUN_NUMBER} .
-          docker push samplerepotest.azurecr.io/samplerepotest:${GITHUB_RUN_NUMBER}
-
-      # - name: Push image
-      #   env:
-      #     ACR_NAME: ${{ secrets.ACR_NAME }}
-      #   run: make push
-      # - name: Checkout code
-      #   uses: actions/checkout@v2
-
-      # - name: Configure kubectl
-      #   run: az aks get-credentials --resource-group "NewLook-Test" --name "Newlook-aks"
-
-      # - uses: Azure/docker-login@v1
-      #   with:
-      #     login-server: cloudlifeacr.azurecr.io
-      #     username: ${{ secrets.ACR_USERNAME }}
-      #     password: ${{ secrets.ACR_PASSWORD }}
-      
-      # - run: |
-      #     docker build -t newlookapi.azurecr.io/NewlookApi:${GITHUB_RUN_NUMBER} .
-      #     docker login myacr.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
-      #     docker push myacr.azurecr.io/myapp:${GITHUB_RUN_NUMBER}
-      # - name: Install Azure CLI
-      #   run: |
-      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash  samplerepotest.azurecr.io
-
-      # - uses: Azure/login@v1
-      #   with:
-      #     creds: '{"clientId":"${{ secrets.AZURE_SERVICE_PRINCIPAL_ID }}","clientSecret":"${{ secrets.AZURE_SERVICE_PRINCIPAL_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
-        
-      # - name: Run kubectl command
-      #   run: kubectl get pods
+    - name: Deploy to Kubernetes cluster
+      uses: Azure/k8s-deploy@v1
+      with:        
+        manifests: |
+          k8s/deployment.yml
+          k8s/service.yml
+        images: '${{ env.REGISTRY_NAME }}.azurecr.io/newlook:${{ github.sha }}'
+        imagepullsecrets: ${{ env.REGISTRY_NAME }}-registry-connection
+        action: deploy
+    
