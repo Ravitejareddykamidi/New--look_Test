@@ -79,3 +79,4 @@ output "admin_password" {
   description = "The Password associated with the Container Registry Admin account "
   sensitive   = true
 }
+testing
